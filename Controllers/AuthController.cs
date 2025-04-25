@@ -1,9 +1,12 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SecureLoginKit.Data;
 using SecureLoginKit.Models;
 using SecureLoginKit.Models.DTOs;
+using SecureLoginKit.Services;
+using SecureLoginKit.Services.Interfaces;
 
 namespace SecureLoginKit.Controllers
 {
@@ -12,10 +15,11 @@ namespace SecureLoginKit.Controllers
     public class AuthController : ControllerBase
     {
         private readonly AppDbContext _context;
-
-        public AuthController(AppDbContext context)
+        private ITokenService _jwtService;
+        public AuthController(AppDbContext context, ITokenService jwtService)
         {
             _context = context;
+            _jwtService = jwtService;
         }
 
         [HttpPost("register")]
@@ -54,8 +58,12 @@ namespace SecureLoginKit.Controllers
             if (exitUser != null && !BCrypt.Net.BCrypt.Verify(request.Password, exitUser.PasswordHash))
             {
                 return Unauthorized("Tài khoản hoặc mật khẩu không chính xác");
-            }    
-            return Ok("Đăng nhập thành công");
+            }
+
+            var accessToken = _jwtService.GenerateAccessToken(exitUser);
+            return Ok(
+                new { AccessToken = accessToken }
+            );
         }
     }
 }
