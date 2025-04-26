@@ -1,2 +1,2 @@
 # SecureLoginKit
-Create restful API Login with some security method
+Create restful API Login with some security methods
