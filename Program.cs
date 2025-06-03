@@ -7,12 +7,16 @@ using SecureLoginKit.Services.Interfaces;
 using SecureLoginKit.Services;
 using SecureLoginKit.Models.Configurations;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
+
 
 var builder = WebApplication.CreateBuilder(args);
 var jwtSetting = builder.Configuration.GetSection("JWTSettings");
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddSwaggerGen(setup =>
@@ -44,8 +48,9 @@ builder.Services.AddSwaggerGen(setup =>
 });
 builder.Services.Configure<JwtSettings>(
 builder.Configuration.GetSection("JWTSettings"));
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
-{
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+.AddJwtBearer(options =>
+    {
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -57,7 +62,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSetting["SecretKey"]))
 
     };
-});
+    })
+.AddGoogle(googleOptions =>
+    {
+        googleOptions.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+        googleOptions.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+    })
+.AddFacebook(facebookOptions =>
+{
+    facebookOptions.AppId = builder.Configuration["Authentication:Facebook:AppId"];
+    facebookOptions.AppSecret = builder.Configuration["Authentication:Facebook:AppSecret"];
+}); ;
 builder.Services.AddScoped<ITokenService, JwtService>();
 
 var app = builder.Build();

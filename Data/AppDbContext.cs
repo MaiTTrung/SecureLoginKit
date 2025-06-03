@@ -10,6 +10,8 @@ namespace SecureLoginKit.Data
         }
         public DbSet<User> Users { get; set; }
 
+        public DbSet<ExternalLogin> ExternalLogins { get; set; }
+
         protected AppDbContext()
         {
         }
